@@ -667,6 +667,19 @@ export class GraphHelpers extends GraphBase {
         this.fitCamera();
     }
 
+    protected cellsAreOverlapping(g1, g2, padding) {
+      let xmin1 = g1.x - padding;
+      let ymin1 = g1.y - padding;
+      let xmin2 = g2.x
+      let ymin2 = g2.y
+      let xmax1 = g1.x + g1.width + padding;
+      let ymax1 = g1.y + g1.height + padding;
+      let xmax2 = g2.x + g2.width
+      let ymax2 = g2.y + g2.height
+
+      return xmax1 >= xmin2 && xmax2 >= xmin1 && ymax1 >= ymin2 && ymax2 >= ymin1;
+    }
+
     /**
        * Returns the circuitContainer that is closest to the given point.
        *
@@ -718,7 +731,7 @@ export class GraphHelpers extends GraphBase {
     }
 
     /**
-       * 
+       *
        */
     protected async promptMakeEditableCopy(partName: string): Promise<boolean> {
         const confirmRef = this.dialog.open(ConfirmComponent, { data: { message: "The part '" + partName + "' is not owned by you and cannot be edited.\n Do you want to create an editable copy of this part and save your changes?", options: ["OK", "Cancel"] } });
@@ -825,8 +838,8 @@ export class GraphHelpers extends GraphBase {
 
     /**
      * Updates the id of the view cell. Also updates the circuit container value if it's a component view cell
-     * @param cell 
-     * @param newGlyphURI 
+     * @param cell
+     * @param newGlyphURI
      */
     protected updateViewCell(cell: mxCell, newGlyphURI: string) {
         if (!cell || !cell.isViewCell()) {
@@ -987,7 +1000,7 @@ export class GraphHelpers extends GraphBase {
     }
 
     /**
-       * URI's must not form a circular reference. This method checks for any cycles 
+       * URI's must not form a circular reference. This method checks for any cycles
        * that would be created if the cell's parents have the same glyphURI that's passed in.
        * @param cell The cell to check upward from.
        * @param glyphURI The URI you would like to set the current cell to.
@@ -1026,7 +1039,7 @@ export class GraphHelpers extends GraphBase {
     }
 
     /**
-     * URI's must not form a circular reference. This method checks for any cycles 
+     * URI's must not form a circular reference. This method checks for any cycles
      * that would be created if the cell's children have the same glyphURI that's passed in.
      * @param cell The cell to check downward from.
      * @param glyphURI The URI you would like to set the current cell to.

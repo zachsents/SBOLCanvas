@@ -310,7 +310,7 @@ export class GraphBase {
          * Returns the id of the cell's highest ancestor
          * (or the cell's own id if it has no parent)
          */
-        mx.mxCell.prototype.getRootId = function () {
+        mx.mxCell.prototype.getContainerID = function () {
             if (this.isSequenceFeatureGlyph()) {
                 return this.parent.getId();
             } else {
@@ -544,7 +544,7 @@ export class GraphBase {
      * Can only be called before this.graph is initialized
      */
     initStyles() {
-        
+
         // Main glyph settings. These are applied to sequence feature glyphs and molecular species glyphs
         this.baseMolecularSpeciesGlyphStyle = {};
         this.baseMolecularSpeciesGlyphStyle[mx.mxConstants.STYLE_FILLCOLOR] = '#ffffff';
@@ -757,14 +757,15 @@ export class GraphBase {
 
                 // sort cells: processing order is important
                 movedCells = movedCells.sort(function (cellA, cellB) {
-                    if (cellA.getRootId() !== cellB.getRootId()) {
+                    if (cellA.getContainerID() !== cellB.getContainerID()) {
                         // cells are not related: choose arbitrary order (but still group by root)
-                        return cellA.getRootId() < cellB.getRootId() ? -1 : 1;
+                        return cellA.getContainerID() < cellB.getContainerID() ? -1 : 1;
                     } else {
-                        // cells are in the same circuitContainer:
-                        // must be in sequence order
-                        let aIndex = cellA.getCircuitContainer(sender).getIndex(cellA);
-                        let bIndex = cellB.getCircuitContainer(sender).getIndex(cellB);
+                        // If the two cells are sequence feature glyphs AND they are on the same strand.
+                        // ... must be in sequence order
+                        // As a result of these facts, referencing 'parent' here is safe.
+                        let aIndex = cellA.getParent().getIndex(cellA);
+                        let bIndex = cellB.getParent().getIndex(cellB);
 
                         return aIndex - bIndex;
                     }
@@ -795,6 +796,35 @@ export class GraphBase {
                     }
                 }
 
+                let fell_into_vat_of_radio_active_sludge = true;
+                let firstContainerID = movedCells[0].getContainerID();
+                for (let i = 0; i < movedCells.length; i++) {
+                  if (movedCells[i].getContainerID() !== firstContainerID || !movedCells[i].isSequenceFeatureGlyph()) {
+                    fell_into_vat_of_radio_active_sludge = false;
+                    break;
+                  }
+                  // We know that the movedCells[i] is a sequence feature glyph at this point.
+                  let circuitContainerGeom = movedCells[i].getParent().getGeometry()
+                  let movedCellGeom = movedCells[i].getGeometry()
+                  // We need to adjust the x and y coors of the moved cell because it is child of the circuit container
+                  // and thus has relative coordinates. By adding the absolute coords of the circuit containter, we have
+                  // the correct coordinates for both boxes.
+                  let movedCellGeomCopy = new mx.mxGeometry(movedCellGeom.x + circuitContainerGeom.x, movedCellGeom.y + circuitContainerGeom.y, movedCellGeom.width, movedCellGeom.height)
+                  if (this.cellsAreOverlapping(circuitContainerGeom, movedCellGeomCopy, 30)) {
+                    fell_into_vat_of_radio_active_sludge = false;
+                    break;
+                  }
+                }
+
+                if (fell_into_vat_of_radio_active_sludge) {
+                  // TODO: Handle edges (and other edge cases)
+                  let x = movedCells[0].getParent().getGeometry().x + movedCells[0].getGeometry().x;
+                  let y = movedCells[0].getParent().getGeometry().y + movedCells[0].getGeometry().y;
+                  sender.removeCells(movedCells)
+                  let circuitContainer = this.addBackboneAt(x, y)
+                  sender.addCells(movedCells, circuitContainer);
+                }
+
                 // If two adjacent sequenceFeatureGlyphs were moved, they should be adjacent after the move.
                 // This loop finds all such sets of glyphs (relying on the sorted order) and sets them to
                 // have the same x position so there is no chance of outside glyphs sneaking in between
@@ -806,12 +836,12 @@ export class GraphBase {
                     }
                     // found a sequenceFeature glyph. A streak might be starting...
                     const baseX = movedCells[i].getGeometry().x;
-                    const rootId = movedCells[i].getRootId();
+                    const rootId = movedCells[i].getContainerID();
                     let streakWidth = movedCells[i].getGeometry().width;
 
                     while (i + streak < movedCells.length
                         && movedCells[i + streak].isSequenceFeatureGlyph()
-                        && rootId === movedCells[i + streak].getRootId()) {
+                        && rootId === movedCells[i + streak].getContainerID()) {
                         let xToContinueStreak = baseX + streakWidth;
                         if (xToContinueStreak === movedCells[i + streak].getGeometry().x) {
                             // The next cell continues the streak
@@ -836,12 +866,14 @@ export class GraphBase {
 
                 // finallly, another special case: if a circuitContainer only has one sequenceFeatureGlyph,
                 // moving the glyph should move the circuitContainer
-                for (const cell of movedCells) {
+                if (!fell_into_vat_of_radio_active_sludge) {
+                  for (const cell of movedCells) {
                     if (cell.isSequenceFeatureGlyph() && cell.getParent().children.length === 2) {
-                        const x = cell.getParent().getGeometry().x + evt.getProperty("dx");
-                        const y = cell.getParent().getGeometry().y + evt.getProperty("dy");
-                        cell.getParent().replaceGeometry(x, y, 'auto', 'auto', sender);
+                      const x = cell.getParent().getGeometry().x + evt.getProperty("dx");
+                      const y = cell.getParent().getGeometry().y + evt.getProperty("dy");
+                      cell.getParent().replaceGeometry(x, y, 'auto', 'auto', sender);
                     }
+                  }
                 }
 
                 // sync circuit containers

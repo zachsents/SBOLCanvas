@@ -216,7 +216,7 @@ export class GraphService extends GraphHelpers {
    */
   addBackbone() {
     const pt = this.getDefaultNewCellCoords();
-    this.addBackboneAt(pt.x, pt.y);
+    return this.addBackboneAt(pt.x, pt.y);
   }
 
   /**
@@ -243,6 +243,7 @@ export class GraphService extends GraphHelpers {
       // The new circuit should be selected
       this.graph.clearSelection();
       this.graph.setSelectionCell(circuitContainer);
+      return circuitContainer;
     } finally {
       this.graph.getModel().endUpdate();
     }
