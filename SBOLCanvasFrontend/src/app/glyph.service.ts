@@ -1,11 +1,7 @@
 import { Injectable } from '@angular/core';
-//import { mx } from "./graph-base";
+import { mx } from "./graph-base";
 //import * as mx from 'src/mxgraph';
 
-declare var require: any;
-const mx = require('mxgraph')({
-  mxBasePath: 'mxgraph'
-});
 
 @Injectable({
   providedIn: 'root'
