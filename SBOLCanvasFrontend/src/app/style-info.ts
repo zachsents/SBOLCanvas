@@ -1,11 +1,13 @@
-import * as mxGraph from 'mxgraph';
-import * as mxCell from 'mxgraph';
+// import * as mxGraph from 'mxgraph';
+// import * as mxCell from 'mxgraph';
 
-declare var require: any;
-const mx = require('mxgraph')({
-  mxImageBasePath: 'mxgraph/images',
-  mxBasePath: 'mxgraph'
-});
+import { mx } from './graph-base';
+
+// declare var require: any;
+// const mx = require('mxgraph')({
+//   mxImageBasePath: 'mxgraph/images',
+//   mxBasePath: 'mxgraph'
+// });
 
 // object used as an enum to identify glyph types
 const elementTypes = {

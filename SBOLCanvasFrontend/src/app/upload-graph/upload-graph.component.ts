@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild, Inject } from '@angular/core';
-import { MatDialogRef, MatTableDataSource, MatSort, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialogRef, MatTableDataSource, MatSort, MAT_DIALOG_DATA, MatDialog } from '@angular/material';
 import { FilesService } from '../files.service';
 import { LoginService } from '../login.service';
 import { GraphService } from '../graph.service';
+import { LoginComponent } from '../login/login.component';
 
 @Component({
   selector: 'app-upload-graph',
@@ -19,11 +20,11 @@ export class UploadGraphComponent implements OnInit {
   componentMode: boolean;
 
   displayedColumns: string[] = ['displayId', 'name', 'version', 'description'];
-  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild(MatSort, { static: false }) sort: MatSort;
 
   working: boolean;
 
-  constructor(private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialogRef: MatDialogRef<UploadGraphComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
+  constructor(private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialog: MatDialog, public dialogRef: MatDialogRef<UploadGraphComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
     if(data){
       this.componentMode = data.componentMode;
     }else{
@@ -72,7 +73,9 @@ export class UploadGraphComponent implements OnInit {
   }
 
   onLoginClick() {
-    this.loginService.openLoginDialog(this.registry).subscribe(result => {
+    const loginDialogRef = this.dialog.open(LoginComponent, {
+      data: { server: this.registry }
+    }).afterClosed().subscribe(result => {
       if (result) {
         this.updateCollections();
       }

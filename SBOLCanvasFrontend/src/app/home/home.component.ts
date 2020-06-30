@@ -20,7 +20,7 @@ export enum KEY_CODE {
 })
 export class HomeComponent implements OnInit, ComponentCanDeactivate {
 
-  @ViewChild(ToolbarComponent) toolbar
+  @ViewChild(ToolbarComponent, { static: true }) toolbar
 
   rightBarOpened = true;
   leftBarOpened = true;

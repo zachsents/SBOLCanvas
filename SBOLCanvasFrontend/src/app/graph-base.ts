@@ -5,14 +5,15 @@ import { GlyphInfo } from './glyphInfo';
 import { InteractionInfo } from './interactionInfo';
 import { GlyphService } from './glyph.service';
 import { GraphHelpers } from './graph-helpers';
+import * as mxo from 'mxgraph';
 
 // mx is used here as the typings file for mxgraph isn't up to date.
 // Also if it weren't exported, other classes wouldn't get our extensions of the mxCell class.
 declare var require: any;
-export const mx = require('mxgraph')({
-    mxImageBasePath: 'mxgraph/images',
-    mxBasePath: 'mxgraph'
-});
+export const mx = require('mxgraph');//({
+//     mxImageBasePath: 'mxgraph/images',
+//     mxBasePath: 'mxgraph'
+// });
 
 /**
  * The base class that represents our mxGraph. Primarily contains initalizers, and core methods.

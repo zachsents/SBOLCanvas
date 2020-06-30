@@ -22,13 +22,13 @@ export class LoginService {
 
   }
 
-  openLoginDialog(registry: string): Observable<any>{
-    const loginDialogRef = this.dialog.open(LoginComponent, {
-      data: { server: registry }
-    });
+  // openLoginDialog(registry: string): Observable<any>{
+  //   const loginDialogRef = this.dialog.open(LoginComponent, {
+  //     data: { server: registry }
+  //   });
 
-    return loginDialogRef.afterClosed();
-  }
+  //   return loginDialogRef.afterClosed();
+  // }
 
   login(email: string, password: string, server: string): Observable<string> {
     // email and password in headers, because I've been told that they don't end up in log files like the url does

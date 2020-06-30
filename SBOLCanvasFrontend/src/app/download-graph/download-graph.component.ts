@@ -1,11 +1,12 @@
 import { Component, OnInit, ViewChild, Inject } from '@angular/core';
 import { LoginService } from '../login.service';
-import { MatDialogRef, MatSort, MatTableDataSource, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialogRef, MatSort, MatTableDataSource, MAT_DIALOG_DATA, MatDialog } from '@angular/material';
 import { FilesService } from '../files.service';
 import { GraphService } from '../graph.service';
 import { MetadataService } from '../metadata.service';
 import { forkJoin, Observable, Subscription } from 'rxjs';
 import { GlyphInfo } from '../glyphInfo';
+import { LoginComponent } from '../login/login.component';
 
 @Component({
   selector: 'app-download-graph',
@@ -38,11 +39,11 @@ export class DownloadGraphComponent implements OnInit {
   partRow: any;
 
   displayedColumns: string[] = ['type', 'displayId', 'name', 'version', 'description'];
-  @ViewChild(MatSort) sort: MatSort;
+  @ViewChild(MatSort, { static: false }) sort: MatSort;
 
   working: boolean;
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any, private metadataService: MetadataService, private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialogRef: MatDialogRef<DownloadGraphComponent>) { }
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any, public dialog: MatDialog, private metadataService: MetadataService, private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialogRef: MatDialogRef<DownloadGraphComponent>) { }
 
   ngOnInit() {
     this.working = true;
@@ -119,7 +120,9 @@ export class DownloadGraphComponent implements OnInit {
   }
 
   onLoginClick() {
-    this.loginService.openLoginDialog(this.registry).subscribe(result => {
+    const loginDialogRef = this.dialog.open(LoginComponent, {
+      data: { server: this.registry }
+    }).afterClosed().subscribe(result => {
       if (result) {
         this.updateParts();
       }

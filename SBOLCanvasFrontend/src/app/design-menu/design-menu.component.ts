@@ -5,12 +5,13 @@ import {MatDialog} from '@angular/material/dialog';
 import {ColorPickerComponent} from '../color-picker/color-picker.component';
 import {StyleInfo} from '../style-info';
 import { MatSelectChange } from '@angular/material';
+import { mx } from '../graph-base';
 
-declare var require: any;
-const mx = require('mxgraph')({
-  mxImageBasePath: 'mxgraph/images',
-  mxBasePath: 'mxgraph'
-});
+// declare var require: any;
+// const mx = require('mxgraph')({
+//   mxImageBasePath: 'mxgraph/images',
+//   mxBasePath: 'mxgraph'
+// });
 
 export interface ColorPickerStartupData {
   initialColor: string;
