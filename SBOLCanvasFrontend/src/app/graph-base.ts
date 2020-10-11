@@ -177,11 +177,11 @@ export class GraphBase {
         // Module info encode/decode
         Object.defineProperty(ModuleInfo, "name", { configurable: true, value: "ModuleInfo" });
         const moduleInfoCodec = new mx.mxObjectCodec(new ModuleInfo());
-        moduleInfoCodec.decode = function(dec, node, into){
+        moduleInfoCodec.decode = function (dec, node, into) {
             const moduleData = new ModuleInfo();
             return genericDecode(dec, node, moduleData);
         }
-        moduleInfoCodec.encode = function(enc, object){
+        moduleInfoCodec.encode = function (enc, object) {
             return object.encode(enc);
         }
         mx.mxCodecRegistry.register(moduleInfoCodec);
@@ -471,7 +471,23 @@ export class GraphBase {
         };
 
         /**
+         * Returns the parent circuit container associated with this cell
+         */
+        mx.mxCell.prototype.getParentCircuitContainer = function (graph) {
+            if (this.isSequenceFeatureGlyph) {
+                return this.getParent();
+            }
+            else {
+                console.error("Expected sequence feature glyph. Undefined behavior.")
+            }
+
+            return null;
+        }
+
+        /**
          * Returns the circuit container associated with this cell.
+         * If it is a sequence feature glyph, then it returns the 'child'
+         * circuit container, not the 'parent'.
          */
         mx.mxCell.prototype.getCircuitContainer = function (graph) {
             if (this.isSequenceFeatureGlyph()) {
@@ -489,6 +505,26 @@ export class GraphBase {
 
             return null;
         };
+
+        /**
+         * Returns the number of sequence feature glyphs that are children of the circuit container
+         */
+        mx.mxCell.prototype.getChildSequenceFeatures = function (graph) {
+            let sequenceFeatures = [];
+
+            if (this.isCircuitContainer()) {
+                for (let child of this.children) {
+                    if (child.isSequenceFeatureGlyph()) {
+                        sequenceFeatures.push(child);
+                    }
+                }
+            }
+            else {
+                console.error("you suck dumbo; Can't count sequence features if the object is not a circuit container... dumbodumdumdummyhead");
+            }
+
+            return sequenceFeatures;
+        }
 
         /**
          * Replaces this cell's geometry in an undo friendly way
@@ -791,7 +827,7 @@ export class GraphBase {
      */
     initListeners() {
         // edge movement
-        this.graph.addListener(mx.mxEvent.CONNECT_CELL, mx.mxUtils.bind(this, async function(sender, evt){
+        this.graph.addListener(mx.mxEvent.CONNECT_CELL, mx.mxUtils.bind(this, async function (sender, evt) {
 
             // if the terminal is a module, we need to prompt what it should be changed to, otherwise just clear it
 
@@ -801,12 +837,12 @@ export class GraphBase {
 
             let cancelled = false;
 
-            try{
+            try {
                 sender.getModel().beginUpdate();
                 let newTarget = null;
-                if(terminal != null && terminal.isModule()){
+                if (terminal != null && terminal.isModule()) {
                     newTarget = await this.promptChooseFunctionalComponent(terminal, source);
-                    if(!newTarget){
+                    if (!newTarget) {
                         cancelled = true;
                         return;
                     }
@@ -814,14 +850,14 @@ export class GraphBase {
 
                 let infoCopy = edge.value.makeCopy();
 
-                if(source){
+                if (source) {
                     infoCopy.fromURI = newTarget;
-                }else{
+                } else {
                     infoCopy.toURI = newTarget;
                 }
 
                 sender.getModel().execute(new GraphEdits.interactionEdit(edge, infoCopy));
-            }finally{
+            } finally {
                 sender.getModel().endUpdate();
                 // undo has to happen after end update
                 if (cancelled) {
@@ -884,33 +920,53 @@ export class GraphBase {
                     }
                 }
 
-                let fell_into_vat_of_radio_active_sludge = true;
+                let fell_into_vat_of_radioactive_sludge = true;
                 let firstContainerID = movedCells[0].getContainerID();
                 for (let i = 0; i < movedCells.length; i++) {
-                  if (movedCells[i].getContainerID() !== firstContainerID || !movedCells[i].isSequenceFeatureGlyph()) {
-                    fell_into_vat_of_radio_active_sludge = false;
-                    break;
-                  }
-                  // We know that the movedCells[i] is a sequence feature glyph at this point.
-                  let circuitContainerGeom = movedCells[i].getParent().getGeometry()
-                  let movedCellGeom = movedCells[i].getGeometry()
-                  // We need to adjust the x and y coors of the moved cell because it is child of the circuit container
-                  // and thus has relative coordinates. By adding the absolute coords of the circuit containter, we have
-                  // the correct coordinates for both boxes.
-                  let movedCellGeomCopy = new mx.mxGeometry(movedCellGeom.x + circuitContainerGeom.x, movedCellGeom.y + circuitContainerGeom.y, movedCellGeom.width, movedCellGeom.height)
-                  if (this.cellsAreOverlapping(circuitContainerGeom, movedCellGeomCopy, 30)) {
-                    fell_into_vat_of_radio_active_sludge = false;
-                    break;
-                  }
+                    // If one of the cells is in a different circuit container, or if one of the cells is not a 
+                    // sequence feature glyph, or the selected glyph is the only member of 
+                    if (movedCells[i].getContainerID() !== firstContainerID || !movedCells[i].isSequenceFeatureGlyph()) {
+                        fell_into_vat_of_radioactive_sludge = false;
+                        break;
+                    }
+
+
+                    // We know that the movedCells[i] is a sequence feature glyph at this point.
+                    let circuitContainerGeom = movedCells[i].getParent().getGeometry()
+                    let movedCellGeom = movedCells[i].getGeometry()
+                    // We need to adjust the x and y coords of the moved cell because it is child of the circuit container
+                    // and thus has relative coordinates. By adding the absolute coords of the circuit containter, we have
+                    // the correct coordinates for both boxes.
+                    let movedCellGeomCopy = new mx.mxGeometry(movedCellGeom.x + circuitContainerGeom.x, movedCellGeom.y + circuitContainerGeom.y, movedCellGeom.width, movedCellGeom.height)
+                    if (this.cellsAreOverlapping(circuitContainerGeom, movedCellGeomCopy, 30)) {
+                        fell_into_vat_of_radioactive_sludge = false;
+                        break;
+                    }
                 }
 
-                if (fell_into_vat_of_radio_active_sludge) {
-                  // TODO: Handle edges (and other edge cases)
-                  let x = movedCells[0].getParent().getGeometry().x + movedCells[0].getGeometry().x;
-                  let y = movedCells[0].getParent().getGeometry().y + movedCells[0].getGeometry().y;
-                  sender.removeCells(movedCells)
-                  let circuitContainer = this.addBackboneAt(x, y)
-                  sender.addCells(movedCells, circuitContainer);
+                // If we are moving ALL the children in a circuit container, then don't create a new backbone.
+                if (fell_into_vat_of_radioactive_sludge && (movedCells.length == movedCells[0].getParentCircuitContainer(sender).getChildSequenceFeatures().length) ) {
+                    fell_into_vat_of_radioactive_sludge = false;
+                }
+
+                if (fell_into_vat_of_radioactive_sludge) {
+                    // TODO: Handle edges (and other edge cases)
+                    for (let movedCell of movedCells) {
+                        while (movedCell.edges && movedCell.edges.length > 0) {
+                            if (movedCell.edges[0].target == movedCell) {
+                                movedCell.removeEdge(movedCell.edges[0], false);
+                            }
+                            if (movedCell.edges[0].source == movedCell) {
+                                movedCell.removeEdge(movedCell.edges[0], true);
+                            }
+                        }
+                    }
+                    let x = movedCells[0].getParent().getGeometry().x + movedCells[0].getGeometry().x;
+                    let y = movedCells[0].getParent().getGeometry().y + movedCells[0].getGeometry().y;
+                    sender.removeCells(movedCells)
+                    let circuitContainer = this.addBackboneAt(x, y)
+                    sender.addCells(movedCells, circuitContainer);
+
                 }
 
                 // If two adjacent sequenceFeatureGlyphs were moved, they should be adjacent after the move.
@@ -954,14 +1010,14 @@ export class GraphBase {
 
                 // finallly, another special case: if a circuitContainer only has one sequenceFeatureGlyph,
                 // moving the glyph should move the circuitContainer
-                if (!fell_into_vat_of_radio_active_sludge) {
-                  for (const cell of movedCells) {
-                    if (cell.isSequenceFeatureGlyph() && cell.getParent().children.length === 2) {
-                      const x = cell.getParent().getGeometry().x + evt.getProperty("dx");
-                      const y = cell.getParent().getGeometry().y + evt.getProperty("dy");
-                      cell.getParent().replaceGeometry(x, y, 'auto', 'auto', sender);
+                if (!fell_into_vat_of_radioactive_sludge) {
+                    for (const cell of movedCells) {
+                        if (cell.isSequenceFeatureGlyph() && cell.getParent().children.length === 2) {
+                            const x = cell.getParent().getGeometry().x + evt.getProperty("dx");
+                            const y = cell.getParent().getGeometry().y + evt.getProperty("dy");
+                            cell.getParent().replaceGeometry(x, y, 'auto', 'auto', sender);
+                        }
                     }
-                  }
                 }
 
                 // sync circuit containers
