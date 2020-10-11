@@ -1,13 +1,31 @@
 package data;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import utils.Converter;
 
 public class InteractionInfo extends Info {
 
 	private String displayID;
 	private String interactionType;
 	private String fromParticipationType;
+	private String toParticipationType;
+	private String fromURI;
+	private String toURI;
+	
+	public String getFromURI() {
+		return fromURI;
+	}
+
+	public void setFromURI(String fromURI) {
+		this.fromURI = fromURI;
+	}
+
+	public String getToURI() {
+		return toURI;
+	}
+
+	public void setToURI(String toURI) {
+		this.toURI = toURI;
+	}
 
 	public String getDisplayID() {
 		return displayID;
@@ -40,18 +58,8 @@ public class InteractionInfo extends Info {
 	public void setToParticipationType(String toParticipationType) {
 		this.toParticipationType = toParticipationType;
 	}
-
-	private String toParticipationType;
-
-	@Override
-	public Element encode(Document doc) {
-		Element intInfo = doc.createElement("InteractionInfo");
-		if (displayID != null)
-			intInfo.setAttribute("displayID", displayID);
-		if (interactionType != null)
-			intInfo.setAttribute("interactionType", interactionType);
-		intInfo.setAttribute("as", "data");
-		return intInfo;
+	
+	public String getFullURI() {
+		return Converter.URI_PREFIX+'/'+this.displayID;
 	}
-
 }

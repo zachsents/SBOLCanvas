@@ -23,7 +23,10 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.sbolstandard.core2.SBOLConversionException;
+import org.sbolstandard.core2.SBOLDocument;
+import org.sbolstandard.core2.SBOLReader;
 import org.sbolstandard.core2.SBOLValidationException;
+import org.sbolstandard.core2.SBOLWriter;
 import org.synbiohub.frontend.IdentifiedMetadata;
 import org.synbiohub.frontend.SearchCriteria;
 import org.synbiohub.frontend.SearchQuery;
@@ -34,8 +37,9 @@ import org.xml.sax.SAXException;
 
 import com.google.gson.Gson;
 
-import utils.Converter;
+import utils.MxToSBOL;
 import utils.SBOLData;
+import utils.SBOLToMx;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = { "/SynBioHub/*" })
@@ -179,8 +183,17 @@ public class SynBioHub extends HttpServlet {
 
 				SynBioHubFrontend sbhf = new SynBioHubFrontend(server);
 				sbhf.setUser(user);
-				Converter converter = new Converter();
-				converter.toGraph(sbhf.getSBOL(URI.create(uri), true), response.getOutputStream());
+				SBOLToMx converter = new SBOLToMx();
+				
+				String layoutURI = uri.substring(0,uri.lastIndexOf("/"))+"_Layout"+uri.substring(uri.lastIndexOf("/"), uri.length());
+				SBOLDocument document;
+				try {
+					document = sbhf.getSBOL(URI.create(layoutURI), true);
+				}catch(SynBioHubException e) {
+					document = sbhf.getSBOL(URI.create(uri), true);
+				}
+				
+				converter.toGraph(document, response.getOutputStream());
 				response.setStatus(HttpStatus.SC_OK);
 				return;
 			}else if(request.getPathInfo().equals("/importRegistryPart")) {
@@ -192,8 +205,17 @@ public class SynBioHub extends HttpServlet {
 				
 				SynBioHubFrontend sbhf = new SynBioHubFrontend(server);
 				sbhf.setUser(user);
-				Converter converter = new Converter();
-				converter.toSubGraph(sbhf.getSBOL(URI.create(uri), true), response.getOutputStream());
+				SBOLToMx converter = new SBOLToMx();
+				
+				String layoutURI = uri.substring(0,uri.lastIndexOf("/"))+"_Layout"+uri.substring(uri.lastIndexOf("/"), uri.length());
+				SBOLDocument document;
+				try {
+					document = sbhf.getSBOL(URI.create(layoutURI), true);
+				}catch(SynBioHubException e) {
+					document = sbhf.getSBOL(URI.create(uri), true);
+				}
+				
+				converter.toGraph(document, response.getOutputStream());
 				response.setStatus(HttpStatus.SC_OK);
 				return;
 			} else {
@@ -209,12 +231,14 @@ public class SynBioHub extends HttpServlet {
 			response.setStatus(HttpStatus.SC_OK);
 			response.setContentType("application/json");
 			return;
-		} catch (SynBioHubException | IOException | ParserConfigurationException | TransformerException | SBOLValidationException | SAXException e) {
+		} catch (SynBioHubException | IOException | ParserConfigurationException | TransformerException | SBOLValidationException | SAXException | URISyntaxException e) {
 			ServletOutputStream outputStream = response.getOutputStream();
 			InputStream inputStream = new ByteArrayInputStream(e.getMessage().getBytes());
 			IOUtils.copy(inputStream, outputStream);
 
 			response.setStatus(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+			
+			e.printStackTrace();
 		}
 	}
 
@@ -223,26 +247,52 @@ public class SynBioHub extends HttpServlet {
 			String server = request.getParameter("server");
 			String user = request.getHeader("Authorization");
 			String uri = request.getParameter("uri");
-			String name = request.getParameter("name");
 
 			if (request.getPathInfo().equals("/addToCollection")) {
 
-				if (server == null || user == null || uri == null || name == null) {
+				if (server == null || user == null || uri == null) {
 					response.setStatus(HttpStatus.SC_BAD_REQUEST);
 					return;
 				}
 				SynBioHubFrontend sbhf = new SynBioHubFrontend(server);
 				sbhf.setUser(user);
-				Converter converter = new Converter();
+				MxToSBOL converter = new MxToSBOL(user);
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				converter.toSBOL(request.getInputStream(), out, name);
+				converter.toSBOL(request.getInputStream(), out);
 				sbhf.addToCollection(URI.create(uri), true, new ByteArrayInputStream(out.toByteArray()));
 				response.setStatus(HttpStatus.SC_CREATED);
-
+			} else if(request.getPathInfo().contentEquals("/importToCollection")) {
+				if(server == null || user == null || uri == null) {
+					response.setStatus(HttpStatus.SC_BAD_REQUEST);
+					return;
+				}
+				SynBioHubFrontend sbhf = new SynBioHubFrontend(server);
+				sbhf.setUser(user);
+				SBOLDocument document = SBOLReader.read(request.getInputStream());
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				SBOLWriter.setKeepGoing(true);
+				SBOLWriter.write(document, out);
+				sbhf.addToCollection(URI.create(uri), true, new ByteArrayInputStream(out.toByteArray()));
+				response.setStatus(HttpStatus.SC_CREATED);
+			} else if(request.getPathInfo().contentEquals("/createCollection")) {
+				String id = request.getParameter("id");
+				String version = request.getParameter("version");
+				String name = request.getParameter("name");
+				String description = request.getParameter("description");
+				String citations = request.getParameter("citations");
+				String overwrite = request.getParameter("overwrite");
+				
+				if(server == null || user == null || id == null || version == null || name == null || description == null || overwrite == null) {
+					response.setStatus(HttpStatus.SC_BAD_REQUEST);
+					return;
+				}
+				SynBioHubFrontend sbhf = new SynBioHubFrontend(server);
+				sbhf.setUser(user);
+				sbhf.createCollection(id, version, name, description, citations, overwrite.equals("true"));
+				response.setStatus(HttpStatus.SC_CREATED);
 			}
 
-		} catch (SynBioHubException | SAXException | IOException | ParserConfigurationException
-				| SBOLValidationException | SBOLConversionException | TransformerFactoryConfigurationError | TransformerException | URISyntaxException e) {
+		} catch (SynBioHubException | IOException | SBOLValidationException | SBOLConversionException | TransformerFactoryConfigurationError | TransformerException | URISyntaxException e) {
 			ServletOutputStream outputStream = response.getOutputStream();
 			InputStream inputStream = new ByteArrayInputStream(e.getMessage().getBytes());
 			IOUtils.copy(inputStream, outputStream);

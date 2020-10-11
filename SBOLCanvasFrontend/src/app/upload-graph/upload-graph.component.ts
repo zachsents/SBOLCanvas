@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild, Inject } from '@angular/core';
-import { MatDialogRef, MatTableDataSource, MatSort, MAT_DIALOG_DATA } from '@angular/material';
+import { MatDialogRef, MatTableDataSource, MatSort, MAT_DIALOG_DATA, MatDialog } from '@angular/material';
 import { FilesService } from '../files.service';
 import { LoginService } from '../login.service';
 import { GraphService } from '../graph.service';
+import { CollectionCreationComponent } from '../collection-creation/collection-creation.component';
 
 @Component({
   selector: 'app-upload-graph',
@@ -15,20 +16,26 @@ export class UploadGraphComponent implements OnInit {
   registry: string;
   collections = new MatTableDataSource([]);
   collection: string;
-  moduleName: string;
   componentMode: boolean;
+
+  importMode: boolean;
+  filename: string;
+  file: File;
 
   displayedColumns: string[] = ['displayId', 'name', 'version', 'description'];
   @ViewChild(MatSort) sort: MatSort;
 
   working: boolean;
 
-  constructor(private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialogRef: MatDialogRef<UploadGraphComponent>, @Inject(MAT_DIALOG_DATA) public data: any) {
+  constructor(private graphService: GraphService, private filesService: FilesService, private loginService: LoginService, public dialogRef: MatDialogRef<UploadGraphComponent>, public dialog: MatDialog, @Inject(MAT_DIALOG_DATA) public data: any) {
     if(data){
       this.componentMode = data.componentMode;
+      this.importMode = data.importMode;
     }else{
       this.componentMode = false;
+      this.importMode = false;
     }
+    this.filename = "No file selected";
   }
 
   ngOnInit() {
@@ -56,7 +63,15 @@ export class UploadGraphComponent implements OnInit {
   }
 
   finishCheck() {
-    return this.collection != null && this.collection.length > 0 && (this.componentMode || (this.moduleName != null && this.moduleName.length > 0));
+    if(!this.importMode){
+      return this.collection != null && this.collection.length > 0;
+    }else{
+      return this.collection != null && this.collection.length > 0 && this.filename !== "No file selected";
+    }
+  }
+
+  createCollectionCheck(){
+    return this.loginService.users[this.registry] != null;
   }
 
   onCancelClick() {
@@ -65,7 +80,15 @@ export class UploadGraphComponent implements OnInit {
 
   onUploadClick() {
     this.working = true;
-    this.filesService.uploadSBOL(this.graphService.getGraphXML(), this.registry, this.collection, this.loginService.users[this.registry], this.moduleName).subscribe(result => {
+    this.filesService.uploadSBOL(this.graphService.getGraphXML(), this.registry, this.collection, this.loginService.users[this.registry]).subscribe(result => {
+      this.working = false;
+      this.dialogRef.close();
+    });
+  }
+
+  onImportClick(){
+    this.working = true;
+    this.filesService.importSBOL(this.file, this.registry, this.collection, this.loginService.users[this.registry]).subscribe(result =>{
       this.working = false;
       this.dialogRef.close();
     });
@@ -77,6 +100,19 @@ export class UploadGraphComponent implements OnInit {
         this.updateCollections();
       }
     });
+  }
+
+  onCreateCollectionClick() {
+    this.dialog.open(CollectionCreationComponent, {data: {registry: this.registry}}).afterClosed().subscribe(result => {
+      if(result)
+        this.updateCollections();
+    });
+  }
+
+  onFileSelected(){
+    const fileInput: any = document.querySelector('#file');
+    this.filename = fileInput.files[0].name;
+    this.file = fileInput.files[0];
   }
 
   updateCollections() {

@@ -2,12 +2,12 @@ import { AfterViewInit, Component, ElementRef, OnInit, QueryList, ViewChild } fr
 import { GraphService } from '../graph.service';
 import { FilesService } from '../files.service';
 import { MatDialog } from '@angular/material';
-import { SaveGraphComponent } from '../save-graph/save-graph.component';
-import { LoadGraphComponent } from '../load-graph/load-graph.component';
 import { UploadGraphComponent } from '../upload-graph/upload-graph.component';
 import { DownloadGraphComponent } from '../download-graph/download-graph.component';
-import { ExportComponent } from '../export/export.component';
+import { ExportImageComponent } from '../export-image/export-image.component';
+import { ExportDesignComponent } from '../export-design/export-design.component';
 import { ConfirmComponent } from '../confirm/confirm.component';
+import { LoadGraphComponent } from '../load-graph/load-graph.component';
 
 export interface SaveDialogData {
   filename: string;
@@ -39,14 +39,6 @@ export class ToolbarComponent implements OnInit, AfterViewInit {
   ngAfterViewInit() {
   }
 
-  save(filename: string) {
-    this.filesService.saveLocal(filename, this.graphService.getGraphXML());
-  }
-
-  load(file: File) {
-    this.filesService.loadLocal(file, this.graphService);
-  }
-
   openUploadDialog(): void {
     this.dialog.open(UploadGraphComponent, {
       data: {componentMode: this.graphService.isRootAComponentView()}
@@ -59,35 +51,18 @@ export class ToolbarComponent implements OnInit, AfterViewInit {
     });
   }
 
-  openSaveDialog(): void {
-    const dialogRef = this.dialog.open(SaveGraphComponent, {
-      data: { filename: this.filename }
-    });
-
-    this.popupOpen = true;
-    dialogRef.afterClosed().subscribe(result => {
-      this.popupOpen = false;
-      if (result != null) {
-        this.save(result);
-      }
+  openImportDialog(): void {
+    this.dialog.open(UploadGraphComponent, {
+      data: {componentMode: this.graphService.isRootAComponentView(), importMode: true }
     });
   }
 
-  openLoadDialog(): void {
-    const dialogRef = this.dialog.open(LoadGraphComponent, {
-      data: { file: null }
-    });
-    this.popupOpen = true;
-    dialogRef.afterClosed().subscribe(result => {
-      this.popupOpen = false;
-      if (result != null) {
-        this.load(result);
-      }
-    });
+  openExportImageDialog(): void {
+    this.dialog.open(ExportImageComponent, {});
   }
 
   openExportDialog(): void {
-    this.dialog.open(ExportComponent, {});
+    this.dialog.open(ExportDesignComponent, {});
   }
 
   zoomChanged($event) {
@@ -100,6 +75,16 @@ export class ToolbarComponent implements OnInit, AfterViewInit {
     // if they entered nonsense the zoom doesn't change, which
     // means angular won't refresh the input box on its own
     $event.target.value = this.getZoomDisplayValue();
+  }
+
+  openLoadDialog(): void {
+    const dialogRef = this.dialog.open(LoadGraphComponent, {
+      data: { file: null }
+    });
+    this.popupOpen = true;
+    dialogRef.afterClosed().subscribe(result => {
+      this.popupOpen = false;
+    });
   }
 
   getZoomDisplayValue() {

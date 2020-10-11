@@ -27,8 +27,6 @@ import {GraphService} from './graph.service';
 // Color Picker imports.
 import {MccColorPickerModule} from 'material-community-components';
 import {MetadataService} from './metadata.service';
-import { SaveGraphComponent } from './save-graph/save-graph.component';
-import { LoadGraphComponent } from './load-graph/load-graph.component';
 import { BannerComponent } from './banner/banner.component';
 import { ColorPickerComponent } from './color-picker/color-picker.component';
 import { UploadGraphComponent } from './upload-graph/upload-graph.component';
@@ -36,10 +34,14 @@ import { LoginComponent } from './login/login.component';
 import { DownloadGraphComponent } from './download-graph/download-graph.component';
 import { ErrorComponent } from './error/error.component';
 import { SearchfilterPipe } from './searchfilter.pipe';
-import { ExportComponent } from './export/export.component';
+import { ExportImageComponent } from './export-image/export-image.component';
 import { LandingPageComponent } from './landing-page/landing-page.component';
 import { TutorialComponent } from './tutorial/tutorial.component';
 import { ConfirmComponent } from './confirm/confirm.component';
+import { FuncCompSelectorComponent } from './func-comp-selector/func-comp-selector.component';
+import { ExportDesignComponent } from './export-design/export-design.component';
+import { CollectionCreationComponent } from './collection-creation/collection-creation.component';
+import { LoadGraphComponent } from './load-graph/load-graph.component';
 
 
 @NgModule({
@@ -51,8 +53,6 @@ import { ConfirmComponent } from './confirm/confirm.component';
     DesignMenuComponent,
     InfoEditorComponent,
     HomeComponent,
-    SaveGraphComponent,
-    LoadGraphComponent,
     BannerComponent,
     ColorPickerComponent,
     UploadGraphComponent,
@@ -61,10 +61,14 @@ import { ConfirmComponent } from './confirm/confirm.component';
     DownloadGraphComponent,
     ErrorComponent,
     SearchfilterPipe,
-    ExportComponent,
+    ExportImageComponent,
     LandingPageComponent,
     TutorialComponent,
     ConfirmComponent,
+    FuncCompSelectorComponent,
+    ExportDesignComponent,
+    CollectionCreationComponent,
+    LoadGraphComponent,
   ],
   imports: [
     BrowserModule,
@@ -84,7 +88,19 @@ import { ConfirmComponent } from './confirm/confirm.component';
     provide: HTTP_INTERCEPTORS, useClass: AppHttpInterceptor, multi: true
     }],
   bootstrap: [AppComponent],
-  entryComponents: [ ToolbarComponent, SaveGraphComponent, LoadGraphComponent, UploadGraphComponent, DownloadGraphComponent, ExportComponent, LoginComponent, ErrorComponent, ConfirmComponent, ColorPickerComponent ]
+  entryComponents: [ 
+    ToolbarComponent, 
+    UploadGraphComponent, 
+    DownloadGraphComponent, 
+    ExportImageComponent, 
+    ExportDesignComponent,
+    CollectionCreationComponent,
+    LoginComponent, 
+    ErrorComponent, 
+    ConfirmComponent, 
+    FuncCompSelectorComponent, 
+    ColorPickerComponent,
+    LoadGraphComponent ]
 })
 export class AppModule {
 }

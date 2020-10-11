@@ -18,9 +18,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.sbolstandard.core2.SBOLConversionException;
 import org.sbolstandard.core2.SBOLValidationException;
+import org.synbiohub.frontend.SynBioHubException;
 import org.xml.sax.SAXException;
 
-import utils.Converter;
+import utils.MxToSBOL;
+import utils.SBOLToMx;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = { "/convert/*" })
@@ -28,17 +30,30 @@ public class Convert extends HttpServlet {
 
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		try {
-			if (request.getPathInfo().equals("/toSBOL")) {
-				String name = request.getParameter("name");
-				if (name == null) {
+			if (request.getPathInfo().equals("/toMxGraph")) {
+				SBOLToMx converter = new SBOLToMx();
+				converter.toGraph(request.getInputStream(), response.getOutputStream());
+			} else if (request.getPathInfo().equals("/exportDesign")){
+				String format = request.getParameter("format");
+				if(format == null) {
 					response.setStatus(HttpStatus.SC_BAD_REQUEST);
 					return;
 				}
-				Converter converter = new Converter();
-				converter.toSBOL(request.getInputStream(), response.getOutputStream(), name);
-			} else if (request.getPathInfo().equals("/toMxGraph")) {
-				Converter converter = new Converter();
-				converter.toGraph(request.getInputStream(), response.getOutputStream());
+				
+				MxToSBOL converter = new MxToSBOL();
+				switch(format) {
+				case "SBOL2":
+					converter.toSBOL(request.getInputStream(), response.getOutputStream()); break;
+				case "SBOL1":
+					converter.toSBOL1(request.getInputStream(), response.getOutputStream()); break;
+				case "GenBank":
+					converter.toGenBank(request.getInputStream(), response.getOutputStream()); break;
+				case "GFF":
+					converter.toGFF(request.getInputStream(), response.getOutputStream()); break;
+				case "Fasta":
+					converter.toFasta(request.getInputStream(), response.getOutputStream()); break;
+				}
+				
 			} else {
 				response.setStatus(HttpStatus.SC_METHOD_NOT_ALLOWED);
 				return;
@@ -46,7 +61,7 @@ public class Convert extends HttpServlet {
 
 			response.setStatus(HttpStatus.SC_OK);
 		} catch (SBOLValidationException | IOException | SBOLConversionException | ParserConfigurationException
-				| TransformerException | SAXException | TransformerFactoryConfigurationError | URISyntaxException e) {
+				| TransformerException | SAXException | TransformerFactoryConfigurationError | URISyntaxException | SynBioHubException e) {
 			ServletOutputStream outputStream = response.getOutputStream();
 			InputStream inputStream = new ByteArrayInputStream(e.getMessage().getBytes());
 			IOUtils.copy(inputStream, outputStream);
